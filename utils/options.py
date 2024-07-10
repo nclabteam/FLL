@@ -79,6 +79,12 @@ class Options:
         
         # FedProx
         parser.add_argument('--mu', type=float, default=None, help='proximal term')
+
+        # FedCAC
+        parser.add_argument('--tau', type=float, default=None)
+
+        # FedCAC
+        parser.add_argument('--beta', type=float, default=None)
         
         self.args = parser.parse_args()
         return self
@@ -110,6 +116,9 @@ class Options:
     def _fix_framework_specific_param(self):
         if self.args.framework == "FedProx":
             self.update_if_none({'mu': 0.001})
+        
+        elif self.args.framework == 'FedCAC':
+            self.update_if_none({'tau': 0.5, 'beta': 160})
 
     def _fix_save_path(self):
         path = increment_path(
