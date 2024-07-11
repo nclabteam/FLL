@@ -64,20 +64,35 @@ class ResNetDim(ResNet):
                 elif isinstance(m, BasicBlock) and m.bn2.weight is not None:
                     nn.init.constant_(m.bn2.weight, 0)  # type: ignore[arg-type]
 
-def ResNet18Double(configs):
-    return ResNetDim(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=configs.num_classes, dim=64*2)
+# ========================================================================================================
 
-def ResNet10Double(configs):
+def ResNet10_2x(configs):
     return ResNetDim(block=BasicBlock, layers=[1, 1, 1, 1], num_classes=configs.num_classes, dim=64*2)
 
-def ResNet34Double(configs):
-    return ResNetDim(block=BasicBlock, layers=[3, 4, 6, 3], num_classes=configs.num_classes, dim=64*2)
-
-def ResNet10Half(configs):
+def ResNet10_0_5x(configs):
     return ResNetDim(block=BasicBlock, layers=[1, 1, 1, 1], num_classes=configs.num_classes, dim=64//2)
 
-def ResNet18Half(configs):
+# ========================================================================================================
+
+def ResNet18_0_0625x(configs):
+    return ResNetDim(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=configs.num_classes, dim=64//16)
+
+def ResNet18_0_125x(configs):
+    return ResNetDim(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=configs.num_classes, dim=64//8)
+
+def ResNet18_0_25x(configs):
+    return ResNetDim(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=configs.num_classes, dim=64//4)
+
+def ResNet18_0_5x(configs):
     return ResNetDim(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=configs.num_classes, dim=64//2)
 
-def ResNet34Half(configs):
+def ResNet18_2x(configs):
+    return ResNetDim(block=BasicBlock, layers=[2, 2, 2, 2], num_classes=configs.num_classes, dim=64*2)
+
+# ========================================================================================================
+
+def ResNet34_0_5x(configs):
     return ResNetDim(block=BasicBlock, layers=[3, 4, 6, 3], num_classes=configs.num_classes, dim=64//2)
+
+def ResNet34_2x(configs):
+    return ResNetDim(block=BasicBlock, layers=[3, 4, 6, 3], num_classes=configs.num_classes, dim=64*2)
