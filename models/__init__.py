@@ -18,3 +18,9 @@ from .ResNetDim import (
     ResNet18Double,
     ResNet34Double,
 )
+
+# Automatically create a list of all classes or functions imported in this file
+import sys
+import inspect
+MODELS = [name for name, obj in sys.modules[__name__].__dict__.items() if inspect.isclass(obj) or inspect.isfunction(obj)]
+print(f'{MODELS =}')

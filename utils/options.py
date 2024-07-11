@@ -8,24 +8,16 @@ from rich.table import Table
 from rich import box
 from rich.terminal_theme import MONOKAI
 from rich.console import Console
+from models import MODELS
+from optimizers import OPTIMIZERS
+from losses import LOSSES
 
-OPTIMIZERS = ['Adam', 'SGD', 'SPS', 'SLS']
 DATASETS = ['cifar10', 'cifar100', 'tinyimagenet']
 DATA_PARTITIONS = ['dir', 'pat', 'exdir']
-# FRAMEWORKS = ['FedAvg', 'FedProx', 'LocalOnly', 'FedFlex', 'FedPolyak', 'FjORD', 'FedALA', 'FedMixout', 'FedEHFT', 'FedX2TPolyak', 'FedCAC', 'FedMX2TPolyak']
 FRAMEWORK_PATH = os.path.abspath(os.path.join('frameworks', 'centralized'))
 FRAMEWORKS = [os.path.splitext(file)[0] for file in os.listdir(FRAMEWORK_PATH) if os.path.isfile(os.path.join(FRAMEWORK_PATH, file))]
-LOSSES = ['CEL', 'CrossEntropyLoss']
 TOPOLOGIES = ['Ring', 'FullyConnected']
 TOLERANCE = 1e-6
-MODELS = [
-    'FedAvgCNN', 
-    'ResNet10', 'ResNet10Half', 'ResNet10Double', 
-    'ResNet18', 'ResNet18Half', 'ResNet18Double', 
-    'ResNet22', 
-    'ResNet34', 'ResNet34Half', 'ResNet34Double'
-]
-
 none_or_str = lambda x: None if x == 'None' else x
 
 class Options:
