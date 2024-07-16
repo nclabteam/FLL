@@ -2,6 +2,12 @@
 
 ## Installation (Linux)
 ```bash
+pip install --upgrade pip
+```
+```bash
+pip install virtualenv
+```
+```bash
 virtualenv venv --python=python3.10
 ```
 ```bash
