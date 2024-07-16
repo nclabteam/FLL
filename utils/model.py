@@ -1,16 +1,15 @@
-import torch
-import torch.nn as nn
-
-from collections import OrderedDict
-import numpy as np
-
-from rich.console import Console
-from rich.table import Table
-from rich import box
-from rich.terminal_theme import MONOKAI
 import os
+import torch
+import numpy as np
 import polars as pl
+from rich import box
+import torch.nn as nn
 from rich.text import Text
+from rich.table import Table
+from rich.console import Console
+from collections import OrderedDict
+from rich.terminal_theme import MONOKAI
+from torchvision.models.resnet import BasicBlock
 
 class ModelSummary:
     """Prints a summary of the model."""
@@ -298,11 +297,12 @@ class ModelSummary:
             if hasattr(module, "weight") and hasattr(module.weight, "size"):
                 params += torch.prod(torch.LongTensor(list(module.weight.size())))
                 summary_dict[m_key]["trainable"] = module.weight.requires_grad
-                summary_dict[m_key]["macs"] = self._calculate_macs(module, output)
-                summary_dict[m_key]["flops"] = self._calculate_flops(module, output)
             if hasattr(module, "bias") and hasattr(module.bias, "size"):
                 params += torch.prod(torch.LongTensor(list(module.bias.size())))
+
             summary_dict[m_key]["nb_params"] = params
+            summary_dict[m_key]["macs"] = self._calculate_macs(module, output)
+            summary_dict[m_key]["flops"] = self._calculate_flops(module, output)
 
         def register_forward_hook(module):
             if not isinstance(module, nn.Sequential) and not isinstance(module, nn.ModuleList):
@@ -328,7 +328,17 @@ class ModelSummary:
         elif isinstance(module, nn.Linear):
             # MACs for linear layer = in_features * out_features
             macs = module.in_features * module.out_features
-        # Add more layer types as needed
+        elif isinstance(module, nn.BatchNorm2d):
+            # MACs for batch norm (approximation) = 2 * num_features * output_width * output_height
+            output_size = output.size()
+            macs = 2 * module.num_features * output_size[2] * output_size[3]
+        elif isinstance(module, (nn.ReLU, nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+            # MACs for ReLU and pooling layers = output elements (since these are element-wise operations)
+            macs = output.numel()
+        elif isinstance(module, BasicBlock):
+            # MACs for BasicBlock = sum of MACs for all sub-modules
+            for sub_module in module.children():
+                macs += self._calculate_macs(sub_module, output)
         return macs
 
     def _calculate_flops(self, module, output):
@@ -342,11 +352,14 @@ class ModelSummary:
             int: Number of FLOPs for the module.
         """
         flops = 0
-        if isinstance(module, nn.Conv2d):
-            # FLOPs for convolution = 2 * MACs
+        if isinstance(module, (nn.Linear, nn.Conv2d)):
+            # FLOPs for convolution and linear = 2 * MACs
             flops = 2 * self._calculate_macs(module, output)
-        elif isinstance(module, nn.Linear):
-            # FLOPs for linear layer = 2 * MACs
-            flops = 2 * self._calculate_macs(module, output)
-        # Add more layer types as needed
+        elif isinstance(module, (nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+            # FLOPs for batch norm, ReLU, and pooling = MACs (since these are element-wise operations)
+            flops = self._calculate_macs(module, output)
+        elif isinstance(module, BasicBlock):
+            # FLOPs for BasicBlock = sum of FLOPs for all sub-modules
+            for sub_module in module.children():
+                flops += self._calculate_flops(sub_module, output)
         return flops
