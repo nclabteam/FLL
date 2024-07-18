@@ -157,6 +157,41 @@ class BaseServer(SharedMethods):
 
         for client in self.clients:
             client.save_results()
+        
+        # Save the indices where accuracies reach every 5% increment
+        granularity = 5
+        granularity_df = {
+            "server_personal": self.get_granularity_indices(self.metrics["test_personal_accs"], granularity=5),
+            "server_general": self.get_granularity_indices(self.metrics["test_traditional_accs"], granularity=5),
+        }
+        for client in self.clients:
+            granularity_df[f'client_{client.id}'] = self.get_granularity_indices(client.metrics['accs'], granularity=5)
+
+        granularity_df = pl.DataFrame(granularity_df).transpose(
+            include_header=True, 
+            column_names=[str(number) for number in range(0, 101, granularity)],
+            header_name='accuracy'
+        )
+        granularity_path = os.path.join(self.result_path, f'accuracy_granularity.csv')
+        granularity_df.write_csv(granularity_path)
+        self.logger.info(f'Accuracy granularity results saved to {granularity_path}')
+
+    def get_granularity_indices(self, accuracies, granularity=5):
+        """
+        Returns the indices (epochs) where the accuracies reach each granularity level.
+        """
+        granularity_levels = list(range(0, 101, granularity))
+        granularity_indices = []
+
+        for level in granularity_levels:
+            for idx, acc in enumerate(accuracies):
+                if acc*100 >= level:
+                    granularity_indices.append(idx)
+                    break
+            else:
+                granularity_indices.append(None)
+
+        return granularity_indices
 
     def _personal_on_test(self):
         """
@@ -364,8 +399,10 @@ class BaseClient(SharedMethods):
 
         self.train_file = os.path.join(self.dataset_path, 'train/', str(self.id) + '.npz')
         self.test_file = os.path.join(self.dataset_path, 'test/', str(self.id) + '.npz')
-        self.train_samples = len(self.load_data(flag='train'))
-        self.test_samples = len(self.load_data(flag='test'))
+        trainset = self.load_data(flag='train')
+        testset = self.load_data(flag='test')
+        self.train_samples = len(trainset)
+        self.test_samples = len(testset)
 
         self.make_logger(name=f'CLIENT_{str(self.id).zfill(3)}', path=self.log_path)
         self.save = False
@@ -426,8 +463,8 @@ class BaseClient(SharedMethods):
             device=self.device,
         )
 
-        acc = 100*result['acc']/result['num']
-        self.logger.info(f'Test Accuracy: {acc:.4f}%')
+        acc = result['acc']/result['num']
+        self.logger.info(f'Test Accuracy: {acc*100:.4f}%')
         self.metrics['accs'].append(acc)
         
         return result
@@ -467,13 +504,26 @@ class BaseClient(SharedMethods):
                     x = x.to(self.device)
                 y = y.to(self.device)
                 output = self.model(x)
-                loss = self.loss(output, y)
+                loss = self._train_loss(output, y)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self._optim_step()
 
         self.metrics['train_time'].append(time.time() - start_time)
     
+    def _train_loss(self, output, y):
+        """
+        Calculates the loss of the model.
+
+        Args:
+            output: The model's output.
+            y: The target labels.
+
+        Returns:
+            The loss value.
+        """
+        return self.loss(output, y)
+
     def _optim_step(self):
         """
         Performs an optimization step.
