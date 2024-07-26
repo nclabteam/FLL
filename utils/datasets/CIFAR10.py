@@ -3,24 +3,6 @@ from .base import DatasetGenerator
 import torchvision.transforms as transforms
 
 class CIFAR10_Generator(DatasetGenerator):
-    """
-    A generator class for the CIFAR10 dataset.
-
-    This class inherits from DatasetGenerator and provides specific logic for
-    downloading and processing CIFAR10 data.
-    """
-    def __init__(self, *args, **kwargs):
-        defaults = {
-            'class_per_client': 2,
-            'plot_ylabel_step': 1
-        }
-
-        for key, default_value in defaults.items():
-            if key not in kwargs or kwargs[key] is None:
-                kwargs[key] = default_value
-                
-        super().__init__(*args, **kwargs)
-
     def download(self) -> tuple[torchvision.datasets.CIFAR10, torchvision.datasets.CIFAR10]:
         """
         Downloads the CIFAR10 dataset.

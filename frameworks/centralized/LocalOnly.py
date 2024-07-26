@@ -1,6 +1,6 @@
-from .base import BaseServer, BaseClient
+from .base import Server, Client
 
-class LocalOnly_Server(BaseServer):
+class LocalOnly(Server):
     def server_aggregation(self):
         pass
 
@@ -11,10 +11,5 @@ class LocalOnly_Server(BaseServer):
     def receive_models(self):
         pass
 
-class LocalOnly_Client(BaseClient):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.save = True
-        
-    def initialize_local(self, *args, **kwargs):
-        pass
+class LocalOnly_Client(Client):
+    pass

@@ -3,6 +3,9 @@ from .CIFAR10 import CIFAR10_Generator
 from .CIFAR100 import CIFAR100_Generator
 from .TinyImagenet import TINYIMAGENET_Generator
 
+DATASETS = ['cifar10', 'cifar100', 'tinyimagenet']
+DATA_PARTITIONS = ['dir', 'pat', 'exdir']
+
 class DatasetFactory:
     def __init__(self, args):
         self.dataset = args.dataset

@@ -1,7 +1,7 @@
-from .base import BaseServer, BaseClient
+from .base import Server, Client
 
-class FedAvg_Server(BaseServer):
+class FedAvg(Server):
     pass
 
-class FedAvg_Client(BaseClient):
+class FedAvg_Client(Client):
     pass

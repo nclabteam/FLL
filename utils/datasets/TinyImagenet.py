@@ -6,24 +6,6 @@ import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder, DatasetFolder
 
 class TINYIMAGENET_Generator(DatasetGenerator):
-    """
-    A generator class for the Tiny ImageNet dataset.
-
-    This class inherits from DatasetGenerator and provides specific logic for
-    downloading and processing Tiny ImageNet data.
-    """
-    def __init__(self, *args, **kwargs):
-        defaults = {
-            'class_per_client': 10,
-            'plot_ylabel_step': 40
-        }
-
-        for key, default_value in defaults.items():
-            if key not in kwargs or kwargs[key] is None:
-                kwargs[key] = default_value
-                
-        super().__init__(*args, **kwargs)
-
     def download(self) -> tuple[torchvision.datasets.ImageFolder, torchvision.datasets.ImageFolder]:
         """
         Downloads the Tiny ImageNet dataset.

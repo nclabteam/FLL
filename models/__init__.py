@@ -1,8 +1,3 @@
-from .CNN import (
-    FedAvgCNN,
-    FjORDCNN
-)
-
 from .ResNet import (
     ResNet10, 
     ResNet18, 
@@ -24,8 +19,12 @@ from .ResNetDim import (
     ResNet34_2x,
 )
 
+from .CNN import (
+    FedAvgCNN
+)
+
 # Automatically create a list of all classes or functions imported in this file
 import sys
 import inspect
 MODELS = [name for name, obj in sys.modules[__name__].__dict__.items() if inspect.isclass(obj) or inspect.isfunction(obj)]
-print(f'{MODELS =}')
+print(f'{MODELS = }')

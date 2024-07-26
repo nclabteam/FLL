@@ -1,11 +1,11 @@
 import copy
 import torch
-from .base import BaseServer, BaseClient
+from .base import Server, Client
 
-class FedProx_Server(BaseServer):
+class FedProx(Server):
     pass
 
-class FedProx_Client(BaseClient):
+class FedProx_Client(Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.global_params = copy.deepcopy(list(self.model.parameters()))
@@ -31,19 +31,13 @@ class FedProx_Client(BaseClient):
             global_params=self.global_params, 
             device=self.device
         )
-
-    def eval_on_train(self) -> tuple[float, int]:
-        """
-        Evaluates the local model on the training data.
-
-        Returns:
-            A tuple containing the average loss and number of samples.
-        """
-        trainloader = self.load_data(flag='train')
+    
+    def train_metrics(self):
+        trainloader = self.load_train_data()
         self.model.eval()
 
-        train_num: int = 0
-        losses: float = 0
+        train_num = 0
+        losses = 0
         with torch.no_grad():
             for x, y in trainloader:
                 if type(x) == type([]):
@@ -53,12 +47,13 @@ class FedProx_Client(BaseClient):
                 y = y.to(self.device)
                 output = self.model(x)
                 loss = self.loss(output, y)
-
+                
                 gm = torch.cat([p.data.view(-1) for p in self.global_params], dim=0)
                 pm = torch.cat([p.data.view(-1) for p in self.model.parameters()], dim=0)
                 loss += 0.5 * self.mu * torch.norm(gm-pm, p=2)
 
                 train_num += y.shape[0]
                 losses += loss.item() * y.shape[0]
-
+        loss = losses / train_num
+        self.metrics['losses'].append(loss)
         return losses, train_num
