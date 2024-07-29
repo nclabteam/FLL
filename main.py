@@ -15,8 +15,6 @@ from utils import (
 )
 import polars as pl
 import sys
-# from models import *
-from utils.mem_utils import MemReporter
 
 FILE = os.path.abspath(__file__)
 ROOT = os.path.dirname(FILE)  # root directory

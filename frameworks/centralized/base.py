@@ -1,22 +1,20 @@
-import copy
-import torch
-import torch.nn as nn
-import numpy as np
 import os
-from torch.utils.data import DataLoader
-from sklearn.preprocessing import label_binarize
-from sklearn import metrics
+import copy
 import time
+import torch
 import random
-from frameworks.base import SharedMethods
-import polars as pl
 import threading
+import numpy as np
+import polars as pl
+import seaborn as sns
+import torch.nn as nn
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
+from frameworks.base import SharedMethods
 from utils import (
     ModelSummary,
     zero_parameters
 )
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 class Server(SharedMethods):
     def __init__(self, configs, times):
@@ -88,12 +86,11 @@ class Server(SharedMethods):
         Sumary the models of server.
         """
         testloader = self.clients[0].load_test_data(shuffle=False)
-        for model, name in zip([self.global_model], ['server_model']):
-            ModelSummary(
-                model=model, 
-                save_path=os.path.join(self.model_info_path, f'{name}.svg'),
-                dataloader=testloader
-            )()
+        ModelSummary(
+            model=self.global_model, 
+            save_path=os.path.join(self.model_info_path, 'server_model.svg'),
+            dataloader=testloader
+        )()
 
     def send_models(self):
         assert (len(self.clients) > 0)
@@ -373,11 +370,8 @@ class Server(SharedMethods):
         for thread in threads:
             thread.join()
         
-        for client in set(self.clients) - set(self.selected_clients):
-            max_length = max(len(lst) for lst in client.metrics.values())
-            for key in client.metrics.keys():
-                if len(client.metrics[key]) < max_length:
-                    client.metrics[key].extend([-1.0] * (max_length - len(client.metrics[key])))
+        for client in self.clients:
+            client.fix_results()
 
     def _train_batch(self, clients):
         """Trains a batch of clients sequentially within a thread."""
@@ -435,24 +429,18 @@ class Client(SharedMethods):
             'losses': [],
         }
 
-        self.loss = self.get_loss()
-        self.optimizer = self.get_optimizer()
+        self.get_loss()
+        self.get_optimizer()
 
         self.train_file = os.path.join(self.dataset_path, 'train/', str(self.id) + '.npz')
         self.test_file = os.path.join(self.dataset_path, 'test/', str(self.id) + '.npz')
         self.make_logger(name=f'CLIENT_{str(self.id).zfill(3)}', path=self.log_path)
 
     def get_loss(self):
-        """
-        Returns the loss function.
-        """
-        return getattr(__import__('losses'), self.loss)()
+        self.loss = super().get_loss(name=self.loss)()
 
     def get_optimizer(self):
-        """
-        Returns the optimizer.
-        """
-        return getattr(__import__('optimizers'), self.optimizer)(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = super().get_optimizer(name=self.optimizer)(self.model.parameters(), lr=self.learning_rate)
 
     def load_data(self, path):
         with open(path, 'rb') as f:
@@ -533,6 +521,12 @@ class Client(SharedMethods):
         pl_df.write_csv(path)
         self.logger.info(f'Results saved to {path}')
     
+    def fix_results(self):
+        max_length = max(len(lst) for lst in self.metrics.values())
+        for key in self.metrics.keys():
+            if len(self.metrics[key]) < max_length:
+                self.metrics[key].extend([-1.0] * (max_length - len(self.metrics[key])))
+    
     def _optim_step(self):
         self.optimizer.step()
 
@@ -542,7 +536,7 @@ class Client(SharedMethods):
         self.model.train()
         start_time = time.time()
         for epoch in range(self.epochs):
-            for i, (x, y) in enumerate(trainloader):
+            for x, y in trainloader:
                 if type(x) == type([]):
                     x[0] = x[0].to(self.device)
                 else:

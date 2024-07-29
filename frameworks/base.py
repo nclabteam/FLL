@@ -67,6 +67,12 @@ class SharedMethods:
             if not os.path.exists(dir):
                 os.makedirs(dir)
     
+    def get_loss(self, name):
+        return getattr(__import__('losses'), name)
+
+    def get_optimizer(self, name):
+        return getattr(__import__('optimizers'), name)
+    
     # def evaluation_trainset(self, model, dataloader, loss, device):
     #     model.eval()
     #     losses: float = 0
