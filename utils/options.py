@@ -86,6 +86,15 @@ class Options:
 
         # FedProx
         parser.add_argument('--mu', type=float, default=None, help='proximal term')
+        
+        # FedAtt
+        parser.add_argument('--epsilon', type=float, default=None, help='stepsize')
+        
+        # FedAtt
+        parser.add_argument('--ord', type=int, default=None, help='similarity metric')
+        
+        # FedAtt
+        parser.add_argument('--dp', type=float, default=None, help='differential privacy')
 
         self.args = parser.parse_args()
         os.environ["CUDA_VISIBLE_DEVICES"] = self.args.device_id
@@ -97,6 +106,7 @@ class Options:
             'FedPolyak': {'mix':0.9, 'save_local_model':True},
             'LocalOnly': {'save_local_model':True},
             'FedProx': {'mu': 0.001},
+            'FedAtt': {'epsilon':1.2, 'ord':2, 'dp':0.001},
         }
         self.update_if_none(params=update_dict.get(self.args.framework, {}))
 
