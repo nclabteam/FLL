@@ -437,10 +437,10 @@ class Client(SharedMethods):
         self.make_logger(name=f'CLIENT_{str(self.id).zfill(3)}', path=self.log_path)
 
     def get_loss(self):
-        self.loss = super().get_loss(name=self.loss)()
+        self.loss = getattr(__import__('losses'), self.loss)()
 
     def get_optimizer(self):
-        self.optimizer = super().get_optimizer(name=self.optimizer)(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = getattr(__import__('optimizers'), self.optimizer)(self.model.parameters(), lr=self.learning_rate)
 
     def load_data(self, path):
         with open(path, 'rb') as f:

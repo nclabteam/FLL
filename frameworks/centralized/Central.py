@@ -10,11 +10,11 @@ class Central(Server):
     
     def get_loss(self):
         if type(self.loss) != str: return
-        self.loss = super().get_loss(name=self.loss)()
+        self.loss = getattr(__import__('losses'), self.loss)()
 
     def get_optimizer(self):
         if type(self.optimizer) != str: return
-        self.optimizer = super().get_optimizer(name=self.optimizer)(self.global_model.parameters(), lr=self.learning_rate)
+        self.optimizer = getattr(__import__('optimizers'), self.optimizer)(self.model.parameters(), lr=self.learning_rate)
     
     def _optim_step(self):
         self.optimizer.step()
