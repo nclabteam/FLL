@@ -18,6 +18,7 @@ from .datasets import (
 
 FRAMEWORK_PATH = os.path.abspath(os.path.join('frameworks', 'centralized'))
 FRAMEWORKS = [os.path.splitext(file)[0] for file in os.listdir(FRAMEWORK_PATH) if os.path.isfile(os.path.join(FRAMEWORK_PATH, file))]
+STRAT = ['personalization', 'generalization']
 
 class Options:
     def __init__(self, root):
@@ -48,6 +49,7 @@ class Options:
         parser.add_argument('--iid', action='store_true', default=False, help='niid')
         parser.add_argument('--balance', action='store_true', default=False, help='balance')
         parser.add_argument('--partition', type=str, default='dir', help='data partition', choices=DATA_PARTITIONS)
+        parser.add_argument('--strat', type=str, default='personalization', choices=STRAT, help='data partition strategy')
         parser.add_argument('--class_per_client', type=int, default=None, help='number of classes per client')
         parser.add_argument('--plot_ylabel_step', type=int, default=None, help='plot ylabel step')
 

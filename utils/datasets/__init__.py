@@ -18,6 +18,7 @@ class DatasetFactory:
         self.partition = args.partition
         self.class_per_client = args.class_per_client
         self.plot_ylabel_step = args.plot_ylabel_step
+        self.strat = args.strat
     
     def __call__(self):
         generator = globals()[f"{self.dataset.upper()}_Generator"](
@@ -30,7 +31,8 @@ class DatasetFactory:
             balance=self.balance,
             partition=self.partition,
             class_per_client=self.class_per_client,
-            plot_ylabel_step=self.plot_ylabel_step
+            plot_ylabel_step=self.plot_ylabel_step,
+            strat=self.strat,
         )
         generator.generate_data()
         self.num_classes = generator.num_classes
