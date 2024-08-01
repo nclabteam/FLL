@@ -67,11 +67,13 @@ class TrainingController(SharedMethods):
 
     def send_models(self):
         for node in self.nodes:
-            node.neighbor_models = [self.nodes[nei].model for nei in node.neighbors]
-            node.neighbor_weights = [self.nodes[nei].train_samples for nei in node.neighbors]
-            tot_samples = sum(node.neighbor_weights)
-            for i, w in enumerate(node.neighbor_weights):
-                node.neighbor_weights[i] = w / tot_samples
+            node.uploaded_models = [self.nodes[nei].model for nei in node.neighbors]
+            node.uploaded_weights = [self.nodes[nei].train_samples for nei in node.neighbors]
+            node.uploaded_models.append(node.model)
+            node.uploaded_weights.append(node.train_samples)
+            tot_samples = sum(node.uploaded_weights)
+            for i, w in enumerate(node.uploaded_weights):
+                node.uploaded_weights[i] = w / tot_samples
 
     def nodes_aggregation(self):
         for node in self.nodes:
@@ -159,9 +161,9 @@ class Node(SharedMethods):
         self.metrics['train_time'].append(time.time() - start_time)
     
     def aggregate(self):
-        assert len(self.neighbor_models) == len(self.neighbors)
+        assert len(self.uploaded_models) == len(self.neighbors)+1
         self.model = zero_parameters(self.model)
-        for w, neighbor in zip(self.neighbor_weights, self.neighbor_models):
+        for w, neighbor in zip(self.uploaded_weights, self.uploaded_models):
             for model_param, neightbor_param in zip(self.model.parameters(), neighbor.parameters()):
                 model_param.data += w * neightbor_param.data.clone()
     
