@@ -4,10 +4,7 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from frameworks.base import SharedMethods
-from utils import (
-    ModelSummary,
-    zero_parameters
-)
+from utils import zero_parameters
 
 class TrainingController(SharedMethods):
     def __init__(self, configs, times):
@@ -115,6 +112,7 @@ class Node(SharedMethods):
         self.train_file = os.path.join(self.dataset_path, 'train/', str(self.id) + '.npz')
         self.test_file = os.path.join(self.dataset_path, 'test/', str(self.id) + '.npz')
         self.make_logger(name=f'NODE_{str(self.id).zfill(3)}', path=self.log_path)
+        self.logger.info(f'Neighers of node {self.id}: {self.neighbors}')
     
     def get_loss(self):
         self.loss = getattr(__import__('losses'), self.loss)()
@@ -195,6 +193,7 @@ class Node(SharedMethods):
                 test_num += y.shape[0]
         acc = test_acc/test_num
         self.metrics['accs'].append(acc)
+        self.logger.info(f'Test Accurancy: {acc*100:.2f}%')
         return test_acc, test_num
 
     def train_metrics(self):
