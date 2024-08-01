@@ -6,6 +6,7 @@ import torch
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from typing import List, Tuple
+import polars as pl
 
 class DatasetGenerator:
     def __init__(
@@ -355,21 +356,6 @@ class DatasetGenerator:
             num_classes=num_classes
         )
 
-    def split_data(self, X: list[np.ndarray], y: list[np.ndarray]) -> tuple[list[dict[str, np.ndarray]], list[dict[str, np.ndarray]]]:
-        train_data, test_data = [], []
-        self.num_samples = {'train': [], 'test': []}
-
-        for i in range(len(y)):
-            X_train, X_test, y_train, y_test = train_test_split(
-                X[i], y[i], train_size=self.train_ratio, shuffle=True)
-
-            train_data.append({'x': X_train, 'y': y_train})
-            self.num_samples['train'].append(len(y_train))
-            test_data.append({'x': X_test, 'y': y_test})
-            self.num_samples['test'].append(len(y_test))
-
-        return train_data, test_data
-
     def generate_data(self):
         if self.check(): return
         trainset, testset = self.download()
@@ -378,11 +364,28 @@ class DatasetGenerator:
             raise ValueError("Unsupported partition method.")
         if not self.niid: self.partition = 'pat'
         
+        train_statistic = [[] for _ in range(self.num_clients)]
+        test_statistic = [[] for _ in range(self.num_clients)]
+
         if self.strat == 'personalization':
             dataset_image, dataset_label, num_classes = self.load_and_process_data(trainset, testset)
             if not self.niid: self.class_per_client = num_classes
             X, y, statistic = partition_method(dataset_content=dataset_image, dataset_label=dataset_label, num_classes=num_classes)
-            train_data, test_data = self.split_data(X, y)
+            train_data, test_data = [], []
+            self.num_samples = {'train': [], 'test': []}
+
+            for i in range(len(y)):
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X[i], y[i], train_size=self.train_ratio, shuffle=True)
+
+                train_data.append({'x': X_train, 'y': y_train})
+                self.num_samples['train'].append(len(y_train))
+                test_data.append({'x': X_test, 'y': y_test})
+                self.num_samples['test'].append(len(y_test))
+                for label in np.unique(y_train):
+                    train_statistic[i].append((int(label), int(sum(y_train == label))))
+                for label in np.unique(y_test):
+                    test_statistic[i].append((int(label), int(sum(y_test == label))))
 
         elif self.strat == 'generalization':
             train_dataset_image, train_dataset_label, num_classes = self.load_and_process_data(trainset, None) 
@@ -403,10 +406,29 @@ class DatasetGenerator:
                 'train': [len(y[i]) for i in range(self.num_clients)],
                 'test': [len(test_data[i]['y']) for i in range(self.num_clients)] 
             }
-
+            for i in range(self.num_clients):
+                for label in np.unique(y[i]):
+                    train_statistic[i].append((int(label), int(sum(y[i] == label))))
+                for label in np.unique(test_data[i]['y']):
+                    test_statistic[i].append((int(label), int(sum(test_data[i]['y'] == label))))
         else:
             raise ValueError("Unsupported strategy: {}".format(self.strat))
         
+        pl.DataFrame(
+            {
+                'client_id': [i for i in range(self.num_clients) for _ in range(len(train_statistic[i]))],
+                'label': [label for client_stats in train_statistic for label, _ in client_stats],
+                'count': [count for client_stats in train_statistic for _, count in client_stats]
+            }
+        ).write_csv(os.path.join(self.dir_path, 'train_statistics.csv'))
+        pl.DataFrame(
+            {
+                'client_id': [i for i in range(self.num_clients) for _ in range(len(test_statistic[i]))],
+                'label': [label for client_stats in test_statistic for label, _ in client_stats],
+                'count': [count for client_stats in test_statistic for _, count in client_stats]
+            }
+        ).write_csv(os.path.join(self.dir_path, 'test_statistics.csv'))
+
         self.plot(statistic=statistic, num_classes=num_classes)
         self.num_classes = num_classes
         print(f'Number of classes: {num_classes}')
