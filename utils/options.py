@@ -11,6 +11,7 @@ from rich.terminal_theme import MONOKAI
 from models import MODELS
 from optimizers import OPTIMIZERS
 from losses import LOSSES
+from topologies import TOPOLOGIES
 from .datasets import (
     DATASETS,
     DATA_PARTITIONS
@@ -67,6 +68,9 @@ class Options:
         parser.add_argument('--learning_rate', type=float, default=0.005, help="Local learning rate")
         parser.add_argument('--epochs', type=int, default=1, help="Multiple update steps in one local epoch.")
         parser.add_argument('--loss', type=str, default='CrossEntropyLoss', help='loss function', choices=LOSSES)
+
+        # decentralized
+        parser.add_argument('--topology', type=str, default=None, help='topology', choices=TOPOLOGIES)
 
         # FedALA
         parser.add_argument('--eta', type=float, default=None)

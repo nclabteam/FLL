@@ -31,7 +31,6 @@ class Server(SharedMethods):
         self.uploaded_ids = []
         self.uploaded_models = []
 
-        self.rs_test_acc = []
         self.metrics = {
             'test_personal_accs': [],
             'test_global_accs': [],
@@ -535,7 +534,7 @@ class Client(SharedMethods):
         self.train_samples = len(trainloader)
         self.model.train()
         start_time = time.time()
-        for epoch in range(self.epochs):
+        for _ in range(self.epochs):
             for x, y in trainloader:
                 if type(x) == type([]):
                     x[0] = x[0].to(self.device)

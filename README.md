@@ -2,9 +2,6 @@
 
 ## Installation (Linux)
 ```bash
-pip install --upgrade pip
-```
-```bash
 pip install virtualenv
 ```
 ```bash
@@ -12,6 +9,9 @@ virtualenv venv --python=python3.10
 ```
 ```bash
 source venv/bin/activate
+```
+```bash
+pip install --upgrade pip
 ```
 ```bash
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

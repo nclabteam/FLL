@@ -44,12 +44,18 @@ if __name__ == "__main__":
     for t in range(args.prev, args.times):
         print(f"\n============= Running time: {t}th =============")
         SetSeed(seed=args.seed+t).set()
-        print("Creating server and clients ...")
         start = time.time()
-        server = getattr(__import__('frameworks'), args.framework)(args, t)
-        server.train()
-        test_personal_accs.append(max(server.metrics['test_personal_accs']))
-        test_global_accs.append(max(server.metrics['test_global_accs']))
+        if args.topology is None:
+            print("Creating server and clients ...")
+            server = getattr(__import__('frameworks'), args.framework)(args, t)
+            server.train()
+            test_personal_accs.append(max(server.metrics['test_personal_accs']))
+            test_global_accs.append(max(server.metrics['test_global_accs']))
+        else:
+            tmanager = getattr(__import__('frameworks'), 'TrainingController')(configs=args, times=t)
+            tmanager.train()
+            test_personal_accs.append(max(tmanager.metrics['test_personal_accs']))
+            test_global_accs.append(0)
         time_list.append(time.time()-start)
 
     stats_df = pl.DataFrame({

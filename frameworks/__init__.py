@@ -5,3 +5,6 @@ from .centralized.FedPolyak import FedPolyak
 from .centralized.LocalOnly import LocalOnly
 from .centralized.Central import Central
 from .centralized.FedAtt import FedAtt
+
+from .decentralized.base import TrainingController
+from .decentralized.FedAvg import FedAvg_Node
