@@ -35,7 +35,7 @@ python main.py
 | FedAtt | IJCNN | 2019 | Learning Private Neural Language Modeling with Attentive Aggregation | [Arxiv](https://arxiv.org/abs/1812.07108) |
 | FedProx | MLsys | 2020| Federated Optimization in Heterogeneous Networks | [Arxiv](https://arxiv.org/abs/1812.06127) |
 | FedALA | AAAI | 2023 | FedALA: Adaptive Local Aggregation for Personalized Federated Learning | [Arxiv](https://arxiv.org/abs/2212.01197) |
-| FedCAC | ICCV | 2023 | Critical Area Collaboration in Federated Learning | [Arxiv](https://arxiv.org/abs/2309.11103)[OpenAccess](https://openaccess.thecvf.com/content/ICCV2023/html/Wu_Bold_but_Cautious_Unlocking_the_Potential_of_Personalized_Federated_Learning_ICCV_2023_paper.html) |
+| FedCAC | ICCV | 2023 | Critical Area Collaboration in Federated Learning | [Arxiv](https://arxiv.org/abs/2309.11103) [OpenAccess](https://openaccess.thecvf.com/content/ICCV2023/html/Wu_Bold_but_Cautious_Unlocking_the_Potential_of_Personalized_Federated_Learning_ICCV_2023_paper.html) |
 | FedPolyak | CKAIA | 2024 | FedPolyak: Personalized Federated Learning using Poyak-Ruppert Averaging | |
 
 
