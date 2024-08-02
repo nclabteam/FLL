@@ -102,6 +102,12 @@ class Options:
         # FedAtt
         parser.add_argument('--dp', type=float, default=None, help='differential privacy')
 
+        # FedCAC
+        parser.add_argument('--tau', type=float, default=None)
+
+        # FedCAC
+        parser.add_argument('--beta', type=float, default=None)
+
         self.args = parser.parse_args()
         os.environ["CUDA_VISIBLE_DEVICES"] = self.args.device_id
         return self
@@ -113,6 +119,7 @@ class Options:
             'LocalOnly': {'save_local_model':True},
             'FedProx': {'mu': 0.001},
             'FedAtt': {'epsilon':1.2, 'ord':2, 'dp':0.001},
+            'FedCAC': {'tau': 0.5, 'beta': 170, 'save_local_model':True},
         }
         self.update_if_none(params=update_dict.get(self.args.framework, {}))
 
