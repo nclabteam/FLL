@@ -62,6 +62,7 @@ class Options:
         parser.add_argument('-jr', "--join_ratio", type=float, default=1.0, help="Ratio of clients per round")
         parser.add_argument('-rjr', "--random_join_ratio", type=bool, default=False, help="Random ratio of clients per round")
         parser.add_argument('-eg', "--eval_gap", type=int, default=1, help="Rounds gap for evaluation")
+        parser.add_argument('--decoupling', action='store_true', default=False, help='model decoupling, split model into two parts: base (feature extractor) and head')
 
         # client
         parser.add_argument('--optimizer', type=str, default='SGD', help='optimizer name', choices=OPTIMIZERS)
@@ -108,25 +109,33 @@ class Options:
         # FedCAC
         parser.add_argument('--beta', type=float, default=None)
 
+        # FedBABU
+        parser.add_argument('--ft_epochs', type=int, default=None)
+
+        # FedBABU
+        parser.add_argument('--ft_module', action='append', default=None, choices=['head', 'base'])
+
         self.args = parser.parse_args()
         os.environ["CUDA_VISIBLE_DEVICES"] = self.args.device_id
         return self
 
     def _fix_framework_specific_param(self):
-        update_dict = {
+        optional = {
             'FedALA': {'eta':1.0, 'data_rand_percent':0.8, 'p':2, 'threshold':0.1, 'local_patience':10, 'save_local_model':True},
             'FedPolyak': {'mix':0.9, 'save_local_model':True},
             'LocalOnly': {'save_local_model':True},
             'FedProx': {'mu': 0.001},
             'FedAtt': {'epsilon':1.2, 'ord':2, 'dp':0.001},
             'FedCAC': {'tau': 0.5, 'beta': 170, 'save_local_model':True},
+            'FedBABU': {'ft_epochs': 10, 'ft_module': ['head', 'base'], 'save_local_model':True},
         }
-        self.update_if_none(params=update_dict.get(self.args.framework, {}))
+        self.update_if_none(params=optional.get(self.args.framework, {}))
 
-        must_have = {
-            'FedProx':{'optimizer': 'PerturbedGradientDescent'}
+        compulsory = {
+            'FedProx':{'optimizer': 'PerturbedGradientDescent'},
+            'FedBABU': {'decoupling': True},
         }
-        self.update_args(params=must_have.get(self.args.framework, {}))
+        self.update_args(params=compulsory.get(self.args.framework, {}))
     
     def update_args(self, params: dict):
         """

@@ -39,10 +39,11 @@ class Server(SharedMethods):
         }
 
     def get_model(self):
-        """
-        Returns the global model.
-        """
         self.global_model = getattr(__import__('models'), self.model)(configs=self.configs).to(self.device)
+        if self.decoupling:
+            head = copy.deepcopy(self.global_model.fc)
+            self.global_model.fc = nn.Identity()
+            self.global_model = getattr(__import__('models'), 'BaseHeadSplit')(self.global_model, head).to(self.device)
 
     def get_client_object(self):
         # Full module path
