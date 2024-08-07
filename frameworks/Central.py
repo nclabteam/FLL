@@ -14,7 +14,7 @@ class Central(Server):
 
     def get_optimizer(self):
         if type(self.optimizer) != str: return
-        self.optimizer = getattr(__import__('optimizers'), self.optimizer)(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = getattr(__import__('optimizers'), self.optimizer)(self.global_model.parameters(), lr=self.learning_rate)
     
     def _optim_step(self):
         self.optimizer.step()

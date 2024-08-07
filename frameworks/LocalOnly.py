@@ -6,7 +6,7 @@ class LocalOnly(Server):
 
     def send_models(self):
         for client in self.clients:
-            client.metrics['send_time'].append(0)
+            client.metrics['send_time'].append(-1.0)
 
     def receive_models(self):
         pass

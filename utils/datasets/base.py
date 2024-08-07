@@ -21,7 +21,6 @@ class DatasetGenerator:
             partition: str = 'pat', 
             class_per_client: int = None,
             plot_ylabel_step: int = None,
-            strat: str = 'personalization' 
         ):
         self.dataset_name = dataset_name
         self.num_clients = num_clients
@@ -33,12 +32,11 @@ class DatasetGenerator:
         self.partition = partition
         self.class_per_client = class_per_client
         self.plot_ylabel_step = plot_ylabel_step
-        self.strat = strat
 
         self.dir_path = os.path.join(
             'datasets',
             f'{dataset_name.upper()}',
-            f'partition_{partition}-clients_{num_clients}-niid_{str(niid)}-balance_{str(balance)}-batch_{batch_size}-classpc_{class_per_client}-alpha_{str(alpha).replace(".", "")}-train_{str(train_ratio).replace(".", "")}-strat_{strat}')
+            f'partition_{partition}-clients_{num_clients}-niid_{str(niid)}-balance_{str(balance)}-batch_{batch_size}-classpc_{class_per_client}-alpha_{str(alpha).replace(".", "")}-train_{str(train_ratio).replace(".", "")}')
         self.config_path = os.path.join(self.dir_path, "config.yaml")
         self.train_path = os.path.join(self.dir_path, "train/")
         self.test_path = os.path.join(self.dir_path, "test/")
@@ -65,8 +63,7 @@ class DatasetGenerator:
                 config['balance'] == self.balance and \
                 config['partition'] == self.partition and \
                 config['alpha'] == self.alpha and \
-                config['batch_size'] == self.batch_size and \
-                config['strat'] == self.strat:
+                config['batch_size'] == self.batch_size:
                 # print(f"Dataset already generated: {self.dir_path}")
                 self.num_classes = config['num_classes']
                 return True
@@ -236,7 +233,6 @@ class DatasetGenerator:
             'partition': self.partition,
             'alpha': self.alpha,
             'batch_size': self.batch_size,
-            'strat': self.strat,
             'labels_per_clients': statistic_dict,  # Use the dict here
         }
 
@@ -367,52 +363,47 @@ class DatasetGenerator:
         train_statistic = [[] for _ in range(self.num_clients)]
         test_statistic = [[] for _ in range(self.num_clients)]
 
-        if self.strat == 'personalization':
-            dataset_image, dataset_label, num_classes = self.load_and_process_data(trainset, testset)
-            if not self.niid: self.class_per_client = num_classes
-            X, y, statistic = partition_method(dataset_content=dataset_image, dataset_label=dataset_label, num_classes=num_classes)
-            train_data, test_data = [], []
-            self.num_samples = {'train': [], 'test': []}
-
-            for i in range(len(y)):
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X[i], y[i], train_size=self.train_ratio, shuffle=True)
-
-                train_data.append({'x': X_train, 'y': y_train})
-                self.num_samples['train'].append(len(y_train))
-                test_data.append({'x': X_test, 'y': y_test})
-                self.num_samples['test'].append(len(y_test))
-                for label in np.unique(y_train):
-                    train_statistic[i].append((int(label), int(sum(y_train == label))))
-                for label in np.unique(y_test):
-                    test_statistic[i].append((int(label), int(sum(y_test == label))))
-
-        elif self.strat == 'generalization':
-            train_dataset_image, train_dataset_label, num_classes = self.load_and_process_data(trainset, None) 
-            if not self.niid: self.class_per_client = num_classes
-            X, y, statistic = partition_method(dataset_content=train_dataset_image, dataset_label=train_dataset_label, num_classes=num_classes)
-            train_data = [{'x': X[i], 'y': y[i]} for i in range(self.num_clients)]
+        # if self.strat == 'personalization':
+        #     dataset_image, dataset_label, num_classes = self.load_and_process_data(trainset, testset)
+        #     if not self.niid: self.class_per_client = num_classes
+        #     X, y, statistic = partition_method(dataset_content=dataset_image, dataset_label=dataset_label, num_classes=num_classes)
             
-            # Split testset into equal chunks (with adjusted batch size)
-            test_data = []
-            testloader = torch.utils.data.DataLoader(
-                testset, batch_size=min(len(testset), len(testset) // self.num_clients), shuffle=False)
-            for i, test_batch in enumerate(testloader, 0):
-                # Correct access to test_batch data
-                data, targets = test_batch 
-                test_data.append({'x': data.cpu().detach().numpy(), 'y': targets.cpu().detach().numpy()})
 
-            self.num_samples = {
-                'train': [len(y[i]) for i in range(self.num_clients)],
-                'test': [len(test_data[i]['y']) for i in range(self.num_clients)] 
-            }
-            for i in range(self.num_clients):
-                for label in np.unique(y[i]):
-                    train_statistic[i].append((int(label), int(sum(y[i] == label))))
-                for label in np.unique(test_data[i]['y']):
-                    test_statistic[i].append((int(label), int(sum(test_data[i]['y'] == label))))
-        else:
-            raise ValueError("Unsupported strategy: {}".format(self.strat))
+        train_dataset_image, train_dataset_label, num_classes = self.load_and_process_data(trainset, None) 
+        if not self.niid: self.class_per_client = num_classes
+        X, y, statistic = partition_method(dataset_content=train_dataset_image, dataset_label=train_dataset_label, num_classes=num_classes)
+        # train_data = [{'x': X[i], 'y': y[i]} for i in range(self.num_clients)]
+        
+        train_data, test_data = [], []
+        self.num_samples = {'train': [], 'test': []}
+
+        for i in range(len(y)):
+            X_train, X_test, y_train, y_test = train_test_split(
+                X[i], y[i], train_size=self.train_ratio, shuffle=True)
+
+            train_data.append({'x': X_train, 'y': y_train})
+            self.num_samples['train'].append(len(y_train))
+            test_data.append({'x': X_test, 'y': y_test})
+            self.num_samples['test'].append(len(y_test))
+            for label in np.unique(y_train):
+                train_statistic[i].append((int(label), int(sum(y_train == label))))
+            for label in np.unique(y_test):
+                test_statistic[i].append((int(label), int(sum(y_test == label))))
+                
+        # # Split testset into equal chunks (with adjusted batch size)
+        data, targets = next(iter(torch.utils.data.DataLoader(testset, batch_size=len(testset), shuffle=False)))
+        test_generalization = {'x': data.cpu().detach().numpy(), 'y': targets.cpu().detach().numpy()}
+
+        self.num_samples = {
+            'train': [len(y[i]) for i in range(self.num_clients)],
+            'test': [len(test_data[i]['y']) for i in range(self.num_clients)] 
+        }
+        for i in range(self.num_clients):
+            for label in np.unique(y[i]):
+                train_statistic[i].append((int(label), int(sum(y[i] == label))))
+            for label in np.unique(test_data[i]['y']):
+                test_statistic[i].append((int(label), int(sum(test_data[i]['y'] == label))))
+
         
         pl.DataFrame(
             {
@@ -437,3 +428,5 @@ class DatasetGenerator:
         print("The number of test samples:", self.num_samples['test'])
         print()
         self.save_file(train_data, test_data, num_classes, statistic)
+        with open(self.test_path + 'server.npz', 'wb') as f:
+            np.savez_compressed(f, data=test_generalization)

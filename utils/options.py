@@ -11,15 +11,13 @@ from rich.terminal_theme import MONOKAI
 from models import MODELS
 from optimizers import OPTIMIZERS
 from losses import LOSSES
-from topologies import TOPOLOGIES
 from .datasets import (
     DATASETS,
     DATA_PARTITIONS
 )
 
-FRAMEWORK_PATH = os.path.abspath(os.path.join('frameworks', 'centralized'))
+FRAMEWORK_PATH = os.path.abspath('frameworks')
 FRAMEWORKS = [os.path.splitext(file)[0] for file in os.listdir(FRAMEWORK_PATH) if os.path.isfile(os.path.join(FRAMEWORK_PATH, file))]
-STRAT = ['personalization', 'generalization']
 
 class Options:
     def __init__(self, root):
@@ -50,7 +48,6 @@ class Options:
         parser.add_argument('--iid', action='store_true', default=False, help='niid')
         parser.add_argument('--balance', action='store_true', default=False, help='balance')
         parser.add_argument('--partition', type=str, default='dir', help='data partition', choices=DATA_PARTITIONS)
-        parser.add_argument('--strat', type=str, default='personalization', choices=STRAT, help='data partition strategy')
         parser.add_argument('--class_per_client', type=int, default=None, help='number of classes per client')
         parser.add_argument('--plot_ylabel_step', type=int, default=None, help='plot ylabel step')
 
@@ -69,9 +66,6 @@ class Options:
         parser.add_argument('--learning_rate', type=float, default=0.005, help="Local learning rate")
         parser.add_argument('--epochs', type=int, default=1, help="Multiple update steps in one local epoch.")
         parser.add_argument('--loss', type=str, default='CrossEntropyLoss', help='loss function', choices=LOSSES)
-
-        # decentralized
-        parser.add_argument('--topology', type=str, default=None, help='topology', choices=TOPOLOGIES)
 
         # FedALA
         parser.add_argument('--eta', type=float, default=None)
