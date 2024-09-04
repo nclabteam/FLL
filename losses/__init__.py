@@ -1,4 +1,4 @@
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss as CEL
 
 # Automatically create a list of all classes imported in this file
 import sys

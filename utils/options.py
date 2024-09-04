@@ -11,7 +11,7 @@ from rich.terminal_theme import MONOKAI
 from models import MODELS
 from optimizers import OPTIMIZERS
 from losses import LOSSES
-from .datasets import (
+from dataset_factory import (
     DATASETS,
     DATA_PARTITIONS
 )
@@ -56,16 +56,17 @@ class Options:
         parser.add_argument('--model', type=str, default='FedAvgCNN', choices=MODELS)
         parser.add_argument('--iterations', type=int, default=2000)
         parser.add_argument('--patience', type=int, default=None, help="Patience for early stopping")
-        parser.add_argument('-jr', "--join_ratio", type=float, default=1.0, help="Ratio of clients per round")
-        parser.add_argument('-rjr', "--random_join_ratio", type=bool, default=False, help="Random ratio of clients per round")
-        parser.add_argument('-eg', "--eval_gap", type=int, default=1, help="Rounds gap for evaluation")
+        parser.add_argument('--join_ratio', type=float, default=1.0, help="Ratio of clients per round")
+        parser.add_argument('--random_join_ratio', type=bool, default=False, help="Random ratio of clients per round")
+        parser.add_argument('--eval_gap', type=int, default=1, help="Rounds gap for evaluation")
         parser.add_argument('--decoupling', action='store_true', default=False, help='model decoupling, split model into two parts: base (feature extractor) and head')
+        parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 
         # client
         parser.add_argument('--optimizer', type=str, default='SGD', help='optimizer name', choices=OPTIMIZERS)
         parser.add_argument('--learning_rate', type=float, default=0.005, help="Local learning rate")
         parser.add_argument('--epochs', type=int, default=1, help="Multiple update steps in one local epoch.")
-        parser.add_argument('--loss', type=str, default='CrossEntropyLoss', help='loss function', choices=LOSSES)
+        parser.add_argument('--loss', type=str, default='CEL', help='loss function', choices=LOSSES)
 
         # FedALA
         parser.add_argument('--eta', type=float, default=None)

@@ -21,8 +21,24 @@ import logging
 from argparse import Namespace
 
 class SharedMethods:
-    def get_params(self, model):
-        return sum(p.numel() for p in model.parameters())
+    default_value = -1.0
+
+    def save_results(self):
+        pl_df = pl.DataFrame(self.metrics)
+        path = os.path.join(self.result_path, self.name.lower().strip()+'.csv')
+        pl_df.write_csv(path)
+        self.logger.info(f'Results saved to {path}')
+    
+    def save_model(self):
+        path = os.path.join(self.model_path, self.name.lower().strip()+'.pt')
+        torch.save(self.model, path)
+        self.logger.info(f'Model saved to {path}')
+    
+    def fix_results(self, default=-1.0):
+        max_length = max(len(lst) for lst in self.metrics.values())
+        for key in self.metrics.keys():
+            if len(self.metrics[key]) < max_length:
+                self.metrics[key].extend([default] * (max_length - len(self.metrics[key])))
     
     def load_data(self, path):
         with open(path, 'rb') as f:
@@ -34,9 +50,6 @@ class SharedMethods:
         return [(x, y) for x, y in zip(x, y)]
     
     def make_logger(self, name, path):
-        """
-        Creates a logger with a unique name and path.
-        """
         log_path = os.path.join(path, f'{name.lower().strip()}.log')
         
         # Create a unique logger name using the instance id
@@ -64,12 +77,6 @@ class SharedMethods:
         self.logger.info(f'Logger created at {log_path}')
     
     def set_configs(self, configs, **kwargs):
-        """
-        Sets the configuration variables from the configs dictionary.
-
-        Args:
-            configs: A dictionary of configuration arguments.
-        """
         if isinstance(configs, Namespace):
             for key, value in vars(configs).items():
                 setattr(self, key, value)
@@ -100,13 +107,8 @@ class Server(SharedMethods):
 
         self.num_join_clients = int(self.num_clients * self.join_ratio)
         self.current_num_join_clients = self.num_join_clients
-        
-        self.clients = []
-        self.selected_clients = []
 
-        self.uploaded_weights = []
-        self.uploaded_ids = []
-        self.uploaded_models = []
+        self.name = '  SERVER  '
 
         self.metrics = {
             'test_personal_accs': [],
@@ -123,32 +125,20 @@ class Server(SharedMethods):
             self.global_model.fc = nn.Identity()
             self.global_model = getattr(__import__('models'), 'BaseHeadSplit')(self.global_model, head).to(self.device)
 
-    def get_client_object(self):
+    def set_clients(self):
         module_name = self.__module__
         class_name = self.__class__.__name__ + '_Client'
-        return getattr(__import__(module_name, fromlist=[class_name]), class_name)
-
-    def set_clients(self, clientObj=None):
-        self.logger.info('Setting clients.')
-        if clientObj is None: clientObj = self.get_client_object()
-        for idx in range(self.num_clients):
-            client = clientObj(self.configs, id=idx, model=self.global_model, times=self.times)
-            self.clients.append(client)
-        self.logger.info('Finished setting clients.')
+        client_object = getattr(__import__(module_name, fromlist=[class_name]), class_name)
+        self.clients = [client_object(self.configs, id, self.global_model, self.times) for id in range(self.num_clients)]
 
     def select_clients(self):
         if self.random_join_ratio:
             self.current_num_join_clients = np.random.choice(range(self.num_join_clients, self.num_clients+1), 1, replace=False)[0]
         else:
             self.current_num_join_clients = self.num_join_clients
-        selected_clients = list(np.random.choice(self.clients, self.current_num_join_clients, replace=False))
-
-        return selected_clients
+        self.selected_clients = list(np.random.choice(self.clients, self.current_num_join_clients, replace=False))
 
     def models_sumary(self):
-        """
-        Sumary the models of server.
-        """
         testloader = self.clients[0].load_test_data(shuffle=False)
         ModelSummary(
             model=self.global_model, 
@@ -189,27 +179,16 @@ class Server(SharedMethods):
             for server_param, client_param in zip(self.global_model.parameters(), client_model.parameters()):
                 server_param.data += client_param.data.clone() * w
 
-    def save_models(self):
-        """
-        Saves the current global model.
-        """
-        if self.metrics["test_global_accs"][-1] == max(self.metrics["test_global_accs"]):
-            path = os.path.join(self.model_path, f'server.pt')
-            torch.save(
-                self.global_model, 
-                path
-            )
-            self.logger.info(f'Model saved to {path}')
-            if self.save_local_model:    
-                for client in self.clients:
-                    client.save_model()
+    def save_model(self):
+        metric = self.metrics['test_personal_accs'] if self.save_local_model else self.metrics['test_global_accs']
+        if metric[-1] == min(metric):
+            super().save_model()
+            if not self.save_local_model: return    
+            for client in self.clients:
+                client.save_model()
 
     def save_results(self):
-        pl_df = pl.DataFrame(self.metrics)
-        path = os.path.join(self.result_path, f'server.csv')
-        pl_df.write_csv(path)
-        self.logger.info(f'Results saved to {path}')
-
+        super().save_results()
         for client in self.clients:
             client.save_results()
         
@@ -367,10 +346,7 @@ class Server(SharedMethods):
         testloader = DataLoader(self.load_data(self.test_file), self.batch_size, drop_last=False, shuffle=False)
         self.global_model.eval()
         for x, y in testloader:
-            if type(x) == type([]):
-                x[0] = x[0].to(self.device)
-            else:
-                x = x.to(self.device)
+            x = x.to(self.device)
             y = y.to(self.device)
             output = self.global_model(x)
             _, pred = output.max(1)
@@ -434,7 +410,7 @@ class Server(SharedMethods):
             thread.join()
         
         for client in self.clients:
-            client.fix_results()
+            client.fix_results(self.default_value)
 
     def _train_batch(self, clients):
         """Trains a batch of clients sequentially within a thread."""
@@ -442,14 +418,14 @@ class Server(SharedMethods):
             client.train()
 
     def train(self):
-        self.make_logger(name='  SERVER  ', path=self.log_path)
+        self.make_logger(name=self.name, path=self.log_path)
         self.get_model()
         self.set_clients()
         self.models_sumary()
         for i in range(self.iterations+1):
             s_t = time.time()
             self.current_iter = i
-            self.selected_clients = self.select_clients()
+            self.select_clients()
             self.send_models()
             self.evaluate()
             self.train_clients()
@@ -457,23 +433,24 @@ class Server(SharedMethods):
             self.server_aggregation()
             self.metrics['time_per_iter'].append(time.time() - s_t)
             self.logger.info(f'Time cost: {self.metrics["time_per_iter"][-1]:.4f}s')
-            self.save_models()
+            self.save_model()
             if self.early_stopping(acc_lss=[self.metrics["test_global_accs"]]): 
                 break
 
         self.logger.info('')
         self.logger.info('-'*50)
-        self.logger.info(f'Best personal accuracy: {max(self.metrics["test_personal_accs"])}')
-        self.logger.info(f'Best global accuracy: {max(self.metrics["test_global_accs"])}')
-        self.logger.info(f'Average time cost per round: {sum(self.metrics["time_per_iter"][1:])/len(self.metrics["time_per_iter"][1:]):.4f}s')
-
         self.save_results()
+        self.logger.info('-'*50)
+        self.logger.info('')
+        max_key_length = max(len(key) for key in self.metrics.keys())
+        header = f"{'Metric':<{max_key_length}} | {'Min':>8} | {'Mean':>8} | {'Max':>8}"
+        self.logger.info(header)
+        self.logger.info('-'*len(header))
+        for key, value in self.metrics.items():
+            value = np.array(value)
+            self.logger.info(f'{key:<{max_key_length}} | {value.min():8.4f} | {value.mean():8.4f} | {value.max():8.4f}')
 
 class Client(SharedMethods):
-    """
-    Base class for clients in federated learning.
-    """
-
     def __init__(self, configs: dict, id: int, model: nn.Module, times: int):
         self.set_configs(configs=configs, id=id, times=times) 
         self.mkdir()
@@ -498,13 +475,21 @@ class Client(SharedMethods):
 
         self.train_file = os.path.join(self.dataset_path, 'train/', str(self.id) + '.npz')
         self.test_file = os.path.join(self.dataset_path, 'test/', str(self.id) + '.npz')
-        self.make_logger(name=f'CLIENT_{str(self.id).zfill(3)}', path=self.log_path)
+
+        self.name = f'CLIENT_{str(self.id).zfill(3)}'
+        self.make_logger(name=self.name, path=self.log_path)
 
     def get_loss(self):
         self.loss = getattr(__import__('losses'), self.loss)()
 
     def get_optimizer(self):
-        self.optimizer = getattr(__import__('optimizers'), self.optimizer)(self.model.parameters(), lr=self.learning_rate)
+        optimizer_class = getattr(__import__('optimizers'), self.optimizer)
+        optimizer_params = {'lr': self.learning_rate}
+        
+        if self.optimizer.lower() == 'sgd' and hasattr(self, 'momentum'):
+            optimizer_params['momentum'] = self.momentum
+        
+        self.optimizer = optimizer_class(self.model.parameters(), **optimizer_params)
         
     def load_train_data(self, shuffle=True):
         return DataLoader(self.load_data(self.train_file), self.batch_size, drop_last=True, shuffle=shuffle)
@@ -526,10 +511,7 @@ class Client(SharedMethods):
         
         with torch.no_grad():
             for x, y in testloader:
-                if type(x) == type([]):
-                    x[0] = x[0].to(self.device)
-                else:
-                    x = x.to(self.device)
+                x = x.to(self.device)
                 y = y.to(self.device)
                 output = self.model(x)
                 test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
@@ -546,10 +528,7 @@ class Client(SharedMethods):
         losses = 0
         with torch.no_grad():
             for x, y in trainloader:
-                if type(x) == type([]):
-                    x[0] = x[0].to(self.device)
-                else:
-                    x = x.to(self.device)
+                x = x.to(self.device)
                 y = y.to(self.device)
                 output = self.model(x)
                 loss = self.loss(output, y)
@@ -558,29 +537,6 @@ class Client(SharedMethods):
         loss = losses / train_num
         self.metrics['losses'].append(loss)
         return losses, train_num
-    
-    def save_model(self):
-        """
-        Saves the local model.
-        """
-        path = os.path.join(self.model_path, f'client_{str(self.id).zfill(3)}.pt')
-        torch.save(self.model, path)
-        self.logger.info(f'Model saved to {path}')
-    
-    def save_results(self):
-        """
-        Saves the accuracy and loss results as a single Polars DataFrame.
-        """
-        pl_df = pl.DataFrame(self.metrics)
-        path = os.path.join(self.result_path, f'client_{str(self.id).zfill(3)}.csv')
-        pl_df.write_csv(path)
-        self.logger.info(f'Results saved to {path}')
-    
-    def fix_results(self):
-        max_length = max(len(lst) for lst in self.metrics.values())
-        for key in self.metrics.keys():
-            if len(self.metrics[key]) < max_length:
-                self.metrics[key].extend([-1.0] * (max_length - len(self.metrics[key])))
     
     def _optim_step(self):
         self.optimizer.step()
@@ -592,10 +548,7 @@ class Client(SharedMethods):
         start_time = time.time()
         for _ in range(self.epochs):
             for x, y in trainloader:
-                if type(x) == type([]):
-                    x[0] = x[0].to(self.device)
-                else:
-                    x = x.to(self.device)
+                x = x.to(self.device)
                 y = y.to(self.device)
                 output = self.model(x)
                 loss = self.loss(output, y)
