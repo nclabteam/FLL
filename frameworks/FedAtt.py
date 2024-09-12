@@ -5,6 +5,12 @@ from scipy import linalg
 import torch.nn.functional as F
 from .base import Server, Client
 
+optional = {
+    'epsilon':1.2, 
+    'ord':2, 
+    'dp':0.001
+}
+
 class FedAtt(Server):
     def server_aggregation(self):
         """

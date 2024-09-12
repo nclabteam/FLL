@@ -1,5 +1,16 @@
 from .base import Server, Client
 
+optional = {
+    'eta':1.0, 
+    'data_rand_percent':0.8, 
+    'p':2, 
+    'threshold':0.1, 
+    'local_patience':10, 
+    'save_local_model':True
+}
+
+# ==============================
+
 class FedALA(Server):
     pass
 

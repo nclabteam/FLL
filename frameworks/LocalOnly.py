@@ -1,5 +1,9 @@
 from .base import Server, Client
 
+optional = {
+    'save_local_model':True
+}
+
 class LocalOnly(Server):
     def server_aggregation(self):
         pass

@@ -2,6 +2,15 @@ import time
 import random
 from .base import Server, Client
 
+optional = {
+    'ft_epochs': 10, 
+    'ft_module': ['head', 'base'], 
+    'save_local_model':True
+}
+compulsory = {
+    'decoupling': True,
+}
+
 class FedBABU(Server):
     def train(self):
         super().train()

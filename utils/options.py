@@ -115,21 +115,10 @@ class Options:
         return self
 
     def _fix_framework_specific_param(self):
-        optional = {
-            'FedALA': {'eta':1.0, 'data_rand_percent':0.8, 'p':2, 'threshold':0.1, 'local_patience':10, 'save_local_model':True},
-            'FedPolyak': {'mix':0.9, 'save_local_model':True},
-            'LocalOnly': {'save_local_model':True},
-            'FedProx': {'mu': 0.001},
-            'FedAtt': {'epsilon':1.2, 'ord':2, 'dp':0.001},
-            'FedCAC': {'tau': 0.5, 'beta': 170, 'save_local_model':True},
-            'FedBABU': {'ft_epochs': 10, 'ft_module': ['head', 'base'], 'save_local_model':True},
-        }
+        optional = getattr(__import__('frameworks'), 'optional')
         self.update_if_none(params=optional.get(self.args.framework, {}))
 
-        compulsory = {
-            'FedProx':{'optimizer': 'PerturbedGradientDescent'},
-            'FedBABU': {'decoupling': True},
-        }
+        compulsory = getattr(__import__('frameworks'), 'compulsory')
         self.update_args(params=compulsory.get(self.args.framework, {}))
     
     def update_args(self, params: dict):

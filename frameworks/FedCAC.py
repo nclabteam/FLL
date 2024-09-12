@@ -4,6 +4,12 @@ import numpy as np
 import torch.nn as nn
 from .base import Server, Client
 
+optional = {
+    'tau': 0.5,
+    'beta': 170,
+    'save_local_model':True
+}
+
 class FedCAC(Server):
     def send_models(self):
         if self.current_iter != 0:

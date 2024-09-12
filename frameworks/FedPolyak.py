@@ -1,5 +1,10 @@
 from .base import Server, Client
 
+optional = {
+    'mix':0.9, 
+    'save_local_model':True
+}
+
 class FedPolyak(Server):
     pass
 

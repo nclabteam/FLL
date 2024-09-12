@@ -2,6 +2,13 @@ import copy
 import torch
 from .base import Server, Client
 
+optional = {
+    'mu': 0.001,
+}
+compulsory = {
+    'optimizer': 'PerturbedGradientDescent',
+}
+
 class FedProx(Server):
     pass
 
