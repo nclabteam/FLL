@@ -10,6 +10,10 @@ optional = {
     'save_local_model':True
 }
 
+def args_update(parser):
+    parser.add_argument('--tau', type=float, default=None)
+    parser.add_argument('--beta', type=int, default=None)
+
 class FedCAC(Server):
     def send_models(self):
         if self.current_iter != 0:

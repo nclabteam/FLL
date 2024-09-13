@@ -11,6 +11,11 @@ optional = {
     'dp':0.001
 }
 
+def args_update(parser):
+    parser.add_argument('--epsilon', type=float, default=None)
+    parser.add_argument('--ord', type=int, default=None)
+    parser.add_argument('--dp', type=float, default=None)
+
 class FedAtt(Server):
     def server_aggregation(self):
         """

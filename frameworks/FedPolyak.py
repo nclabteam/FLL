@@ -5,6 +5,9 @@ optional = {
     'save_local_model':True
 }
 
+def args_update(parser):
+    parser.add_argument('--mix', type=float, default=None)
+
 class FedPolyak(Server):
     pass
 

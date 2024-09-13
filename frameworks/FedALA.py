@@ -9,6 +9,13 @@ optional = {
     'save_local_model':True
 }
 
+def args_update(parser):
+    parser.add_argument('--eta', type=float, default=None)
+    parser.add_argument('--data_rand_percent', type=float, default=None)
+    parser.add_argument('--p', type=int, default=None)
+    parser.add_argument('--threshold', type=float, default=None)
+    parser.add_argument('--local_patience', type=int, default=None)
+
 # ==============================
 
 class FedALA(Server):

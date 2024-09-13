@@ -7,9 +7,14 @@ optional = {
     'ft_module': ['head', 'base'], 
     'save_local_model':True
 }
+
 compulsory = {
     'decoupling': True,
 }
+
+def args_update(parser):
+    parser.add_argument('--ft_epochs', type=int, default=None)
+    parser.add_argument('--ft_module', type=str, default=None)
 
 class FedBABU(Server):
     def train(self):

@@ -181,7 +181,7 @@ class Server(SharedMethods):
 
     def save_model(self):
         metric = self.metrics['test_personal_accs'] if self.save_local_model else self.metrics['test_global_accs']
-        if metric[-1] == min(metric):
+        if metric[-1] == max(metric):
             super().save_model()
             if not self.save_local_model: return    
             for client in self.clients:

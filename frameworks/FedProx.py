@@ -5,9 +5,13 @@ from .base import Server, Client
 optional = {
     'mu': 0.001,
 }
+
 compulsory = {
     'optimizer': 'PerturbedGradientDescent',
 }
+
+def args_update(parser):
+    parser.add_argument('--mu', type=float, default=None)
 
 class FedProx(Server):
     pass

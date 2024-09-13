@@ -68,47 +68,7 @@ class Options:
         parser.add_argument('--epochs', type=int, default=1, help="Multiple update steps in one local epoch.")
         parser.add_argument('--loss', type=str, default='CEL', help='loss function', choices=LOSSES)
 
-        # FedALA
-        parser.add_argument('--eta', type=float, default=None)
-        
-        # FedALA
-        parser.add_argument('--data_rand_percent', type=float, default=None)
-
-        # FedALA
-        parser.add_argument('--p', type=int, default=None)
-
-        # FedALA
-        parser.add_argument('--threshold', type=float, default=None)
-
-        # FedALA
-        parser.add_argument('--local_patience', type=int, default=None)
-
-        # FedPolyak
-        parser.add_argument('--mix', type=float, default=None)
-
-        # FedProx
-        parser.add_argument('--mu', type=float, default=None, help='proximal term')
-        
-        # FedAtt
-        parser.add_argument('--epsilon', type=float, default=None, help='stepsize')
-        
-        # FedAtt
-        parser.add_argument('--ord', type=int, default=None, help='similarity metric')
-        
-        # FedAtt
-        parser.add_argument('--dp', type=float, default=None, help='differential privacy')
-
-        # FedCAC
-        parser.add_argument('--tau', type=float, default=None)
-
-        # FedCAC
-        parser.add_argument('--beta', type=float, default=None)
-
-        # FedBABU
-        parser.add_argument('--ft_epochs', type=int, default=None)
-
-        # FedBABU
-        parser.add_argument('--ft_module', action='append', default=None, choices=['head', 'base'])
+        getattr(__import__('frameworks'), 'apply_args_update')(parser)
 
         self.args = parser.parse_args()
         os.environ["CUDA_VISIBLE_DEVICES"] = self.args.device_id
