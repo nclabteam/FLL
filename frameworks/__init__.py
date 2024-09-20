@@ -24,11 +24,11 @@ for filename in os.listdir(current_dir):
             
             # Import optional dictionary
             if hasattr(module, 'optional'):
-                optional[class_obj] = getattr(module, 'optional')
+                optional[class_name] = getattr(module, 'optional')
             
             # Import compulsory dictionary
             if hasattr(module, 'compulsory'):
-                compulsory[class_obj] = getattr(module, 'compulsory')
+                compulsory[class_name] = getattr(module, 'compulsory')
             
             # Import args_update function
             if hasattr(module, 'args_update'):
