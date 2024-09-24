@@ -11,3 +11,8 @@ from .model_params import (
     multiply_parameters
 )
 from .model_info import ModelSummary
+
+from .visual import (
+    plot_accuracy_granularity,
+    plot_participant_rate
+)
